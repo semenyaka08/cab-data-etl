@@ -1,23 +1,30 @@
--- Create the database
-CREATE DATABASE CabTrips;
-GO
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.databases
+    WHERE name = N'CabTrips'
+)
+BEGIN
+    CREATE DATABASE CabTrips;
+END;
 
--- Use the database
-USE CabTrips;
-GO
-
--- Create the Trips table
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.objects
+    WHERE object_id = OBJECT_ID(N'[dbo].[Trips]') AND type = N'U'
+)
+BEGIN
+    -- Create the Trips table
 CREATE TABLE Trips
 (
-    Id                    INT IDENTITY(1,1) PRIMARY KEY,
-    tpep_pickup_datetime  DATETIME NOT NULL,
-    tpep_dropoff_datetime DATETIME NOT NULL,
-    passenger_count       INT,
-    trip_distance         DECIMAL(10, 2),
-    store_and_fwd_flag    NVARCHAR(3),
-    PULocationID          INT,
-    DOLocationID          INT,
-    fare_amount           DECIMAL(10, 2),
-    tip_amount            DECIMAL(10, 2)
+    Id                   INT IDENTITY(1,1) PRIMARY KEY,
+    PickupDatetime   DATETIME NOT NULL,
+    DropOffDatetime  DATETIME NOT NULL,
+    PassengerCount       INT,
+    TripDistance         DECIMAL(10, 2),
+    StoreAndFwdFlag      NVARCHAR(3),
+    PuLocationId         INT,
+    DoLocationId         INT,
+    FareAmount           DECIMAL(10, 2),
+    TipAmount            DECIMAL(10, 2)
 );
-GO
+END;

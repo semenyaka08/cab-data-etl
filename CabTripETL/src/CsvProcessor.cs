@@ -5,7 +5,7 @@ namespace CabTripETL;
 
 public static class CsvProcessor
 {
-    public static IEnumerable<CabTripModel> ReadCsv(string filePath, string duplicatesFilePath)
+    public static IEnumerable<CabTripModel> FilterDuplicatesAndProcessCsv(string filePath, string duplicatesFilePath)
     {
         using var reader = new StreamReader(filePath);
         using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
