@@ -5,11 +5,6 @@ namespace CabTripETL;
 
 public static class CsvProcessor
 {
-    public static void Hi()
-    {
-        Console.WriteLine("Hello");
-    }
-
     public static IEnumerable<CabTripModel> ReadCsv(string filePath, string duplicatesFilePath)
     {
         using var reader = new StreamReader(filePath);
@@ -34,7 +29,7 @@ public static class CsvProcessor
                 };
 
                 record.PickupDatetime = ConvertFromEstToUtc(record.PickupDatetime);
-                record.DropoffDatetime = ConvertFromEstToUtc(record.DropoffDatetime);
+                record.DropOffDatetime = ConvertFromEstToUtc(record.DropOffDatetime);
 
                 return record;
             });
@@ -44,7 +39,7 @@ public static class CsvProcessor
 
         foreach (var record in records)
         {
-            var key = $"{record.PickupDatetime:O}|{record.DropoffDatetime:O}|{record.PassengerCount}";
+            var key = $"{record.PickupDatetime:O}|{record.DropOffDatetime:O}|{record.PassengerCount}";
 
             if (!seenKeys.Add(key))
             {
@@ -52,16 +47,14 @@ public static class CsvProcessor
                 csvDuplicatesWriter.NextRecord();
             }
             else
-            {
                 yield return record;
-            }
         }
     }
 
     private static DateTime ConvertFromEstToUtc(DateTime estDateTime)
     {
-        TimeZoneInfo estZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
-        DateTime utcDateTime = TimeZoneInfo.ConvertTimeToUtc(estDateTime, estZone);
+        var estZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+        var utcDateTime = TimeZoneInfo.ConvertTimeToUtc(estDateTime, estZone);
         return utcDateTime;
     }
 }

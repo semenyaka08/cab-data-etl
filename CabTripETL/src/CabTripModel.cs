@@ -8,7 +8,7 @@ public class CabTripModel
     public DateTime PickupDatetime { get; set; }
 
     [Name("tpep_dropoff_datetime")]
-    public DateTime DropoffDatetime { get; set; }
+    public DateTime DropOffDatetime { get; set; }
 
     [Name("passenger_count")]
     public int? PassengerCount { get; set; }
@@ -17,13 +17,13 @@ public class CabTripModel
     public decimal TripDistance { get; set; }
 
     [Name("store_and_fwd_flag")]
-    public string StoreAndFwdFlag { get; set; }
+    public string StoreAndFwdFlag { get; set; } = string.Empty;
 
     [Name("PULocationID")]
-    public int PULocationID { get; set; }
+    public int PuLocationId { get; set; }
 
     [Name("DOLocationID")]
-    public int DOLocationID { get; set; }
+    public int DoLocationId { get; set; }
 
     [Name("fare_amount")]
     public decimal FareAmount { get; set; }

@@ -6,24 +6,28 @@ namespace CabTripETL;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
+        var currentDirectory = Directory.GetCurrentDirectory();
+        var relativePath = Path.Combine("..", "..", "..");
+        var projectDirectory = Path.GetFullPath(Path.Combine(currentDirectory, relativePath));
+        
+        Console.WriteLine(projectDirectory);
+        
         var config = new ConfigurationBuilder()
-            .AddJsonFile("E:\\TestTask\\CabTripETL\\CabTripETL\\src\\appsettings.json", optional: false,
+            .AddJsonFile($"{projectDirectory}\\src\\appsettings.json", optional: false,
                 reloadOnChange: false)
             .Build();
 
         var connectionString = config.GetConnectionString("DefaultConnection");
 
-        const string inputCsvFilePath = "E:\\TestTask\\CabTripETL\\CabTripETL\\data\\sample-cab-data.csv";
-        const string duplicatesCsvFilePath = "E:\\TestTask\\CabTripETL\\CabTripETL\\data\\duplicates.csv";
+        var inputCsvFilePath = Path.Combine(projectDirectory, config["DataFiles:InputCsv"]!);
+        var duplicatesCsvFilePath = Path.Combine(projectDirectory, config["DataFiles:DuplicatesCsv"]!);
 
         var cabTrips = CsvProcessor.ReadCsv(inputCsvFilePath, duplicatesCsvFilePath);
 
         if (connectionString != null)
-        {
             SaveToDatabase(cabTrips, connectionString);
-        }
     }
 
     static void SaveToDatabase(IEnumerable<CabTripModel> cabTrips, string connectionString)
@@ -34,47 +38,48 @@ class Program
         using var transaction = connection.BeginTransaction();
         try
         {
+            DataTable dataTable = new DataTable();
+            dataTable.Columns.Add("tpep_pickup_datetime", typeof(DateTime));
+            dataTable.Columns.Add("tpep_dropoff_datetime", typeof(DateTime));
+            dataTable.Columns.Add("passenger_count", typeof(int));
+            dataTable.Columns.Add("trip_distance", typeof(decimal));
+            dataTable.Columns.Add("store_and_fwd_flag", typeof(string));
+            dataTable.Columns.Add("PULocationID", typeof(int));
+            dataTable.Columns.Add("DOLocationID", typeof(int));
+            dataTable.Columns.Add("fare_amount", typeof(decimal));
+            dataTable.Columns.Add("tip_amount", typeof(decimal));
+
             foreach (var trip in cabTrips)
             {
-                var sql = @"
-                    INSERT INTO Trips ( 
-                        tpep_pickup_datetime,
-                        tpep_dropoff_datetime,
-                        passenger_count,
-                        trip_distance,
-                        store_and_fwd_flag,
-                        PULocationID,
-                        DOLocationID,
-                        fare_amount,
-                        tip_amount
-                    )
-                    VALUES (
-                        @tpep_pickup_datetime,
-                        @tpep_dropoff_datetime,
-                        @passenger_count,
-                        @trip_distance,
-                        @store_and_fwd_flag,
-                        @PULocationID,
-                        @DOLocationID,
-                        @fare_amount,
-                        @tip_amount
-                    )";
-
-                using var command = new SqlCommand(sql, connection, transaction);
-
-                command.Parameters.Add("@tpep_pickup_datetime", SqlDbType.DateTime).Value = trip.PickupDatetime;
-                command.Parameters.Add("@tpep_dropoff_datetime", SqlDbType.DateTime).Value = trip.DropoffDatetime;
-                command.Parameters.Add("@passenger_count", SqlDbType.Int).Value = trip.PassengerCount;
-                command.Parameters.Add("@trip_distance", SqlDbType.Decimal).Value = trip.TripDistance;
-                command.Parameters.Add("@store_and_fwd_flag", SqlDbType.NVarChar).Value = trip.StoreAndFwdFlag;
-                command.Parameters.Add("@PULocationID", SqlDbType.Int).Value = trip.PULocationID;
-                command.Parameters.Add("@DOLocationID", SqlDbType.Int).Value = trip.DOLocationID;
-                command.Parameters.Add("@fare_amount", SqlDbType.Decimal).Value = trip.FareAmount;
-                command.Parameters.Add("@tip_amount", SqlDbType.Decimal).Value = trip.TipAmount;
-
-                command.ExecuteNonQuery();
+                dataTable.Rows.Add(
+                    trip.PickupDatetime,
+                    trip.DropOffDatetime,
+                    trip.PassengerCount,
+                    trip.TripDistance,
+                    trip.StoreAndFwdFlag,
+                    trip.PuLocationId,
+                    trip.DoLocationId,
+                    trip.FareAmount,
+                    trip.TipAmount
+                );
             }
+            
+            using var bulkCopy = new SqlBulkCopy(connection, SqlBulkCopyOptions.Default, transaction);
+            
+            bulkCopy.DestinationTableName = "Trips";
 
+            bulkCopy.ColumnMappings.Add("tpep_pickup_datetime", "tpep_pickup_datetime");
+            bulkCopy.ColumnMappings.Add("tpep_dropoff_datetime", "tpep_dropoff_datetime");
+            bulkCopy.ColumnMappings.Add("passenger_count", "passenger_count");
+            bulkCopy.ColumnMappings.Add("trip_distance", "trip_distance");
+            bulkCopy.ColumnMappings.Add("store_and_fwd_flag", "store_and_fwd_flag");
+            bulkCopy.ColumnMappings.Add("PULocationID", "PULocationID");
+            bulkCopy.ColumnMappings.Add("DOLocationID", "DOLocationID");
+            bulkCopy.ColumnMappings.Add("fare_amount", "fare_amount");
+            bulkCopy.ColumnMappings.Add("tip_amount", "tip_amount");
+            
+            bulkCopy.WriteToServer(dataTable);
+            
             transaction.Commit();
         }
         catch (Exception ex)
