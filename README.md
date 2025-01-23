@@ -47,3 +47,11 @@ Once started, the project will execute the ETL process, which includes:
 *   Loading cab trip data.
 *   Cleaning and transforming the data.
 *   Saving the processed data into the database.
+
+## Important Considerations for Large Datasets:
+
+If the program is expected to handle a 10GB CSV input file, the following changes are essential:
+
+*   **Batch Processing:** Instead of loading and processing the entire file at once, implement batch processing to handle smaller subsets of data. This will prevent memory overflow and increase reliability.
+
+---
