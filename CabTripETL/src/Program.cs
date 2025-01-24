@@ -20,15 +20,16 @@ class Program
             .Build();
 
         var connectionString = config.GetConnectionString("DefaultConnection");
-
-        if (connectionString == null) return;
+        var masterConnection = config.GetConnectionString("MasterConnection");
+        
+        if (connectionString == null || masterConnection == null) return;
         
         var inputCsvFilePath = Path.Combine(projectDirectory, config["DataFiles:InputCsv"]!);
         var duplicatesCsvFilePath = Path.Combine(projectDirectory, config["DataFiles:DuplicatesCsv"]!);
         
         var sqlScriptsDirectory = Path.Combine(projectDirectory, config["SqlFiles"]!);
         
-        var databaseService = new DatabaseService(connectionString);
+        var databaseService = new DatabaseService(connectionString, masterConnection);
         
         databaseService.InitializeDatabase(sqlScriptsDirectory);
         

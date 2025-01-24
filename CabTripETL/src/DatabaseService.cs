@@ -3,12 +3,25 @@ using Microsoft.Data.SqlClient;
 
 namespace CabTripETL;
 
-public class DatabaseService(string connectionString)
+public class DatabaseService(string connectionString, string masterConnectionString)
 {
     public void InitializeDatabase(string scriptsDirectory)
     {
         var sqlFiles = Directory.GetFiles(scriptsDirectory, "*.sql");
 
+        using (var masterConnection = new SqlConnection(masterConnectionString))
+        {
+            masterConnection.Open();
+
+            var createDatabaseScriptPath = sqlFiles.FirstOrDefault(file => file.Contains("CreateDatabase", StringComparison.OrdinalIgnoreCase));
+            if (createDatabaseScriptPath != null)
+            {
+                var createDatabaseScript = File.ReadAllText(createDatabaseScriptPath);
+                using var command = new SqlCommand(createDatabaseScript, masterConnection);
+                command.ExecuteNonQuery();
+            }
+        }
+        
         using var connection = new SqlConnection(connectionString);
         connection.Open();
 
